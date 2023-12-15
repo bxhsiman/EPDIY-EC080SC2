@@ -13,7 +13,7 @@ def rgb_image_to_header_file(image_path, output_path):
     # 获取RGB通道数据
     pixels = np.array(image, dtype=np.uint8)
     # 转换为CMY数据
-    pixels = 255 - pixels
+    #pixels = 255 - pixels
 
     # 创建数据数组
     data = []
@@ -22,9 +22,7 @@ def rgb_image_to_header_file(image_path, output_path):
         for x in range(width // 2):
             # 获取当前像素的RGB值
             r1, g1, b1 = pixels[y, 2*x]
-            r2, g2, b2 = pixels[y, 2*x+1]
-            
-            
+            r2, g2, b2, _ = pixels[y, 2*x+1]
             
             # 缩减颜色通道值到4位
             r1, g1, b1 = r1 // 16, g1 // 16, b1 // 16
