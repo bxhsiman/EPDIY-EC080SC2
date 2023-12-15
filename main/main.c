@@ -25,6 +25,7 @@
 #include "img_beach.h"
 #include "img_board.h"
 #include "img_zebra.h"
+#include "test800.h"
 
 #define WAVEFORM EPD_BUILTIN_WAVEFORM
 
@@ -48,6 +49,9 @@ void idf_setup() {
 
     heap_caps_print_heap_info(MALLOC_CAP_INTERNAL);
     heap_caps_print_heap_info(MALLOC_CAP_SPIRAM);
+
+    epd_clear();
+    
 }
 
 #ifndef ARDUINO_ARCH_ESP32
@@ -62,102 +66,97 @@ static inline void checkError(enum EpdDrawError err) {
     }
 }
 
-void draw_progress_bar(int x, int y, int width, int percent, uint8_t* fb) {
-    const uint8_t white = 0xFF;
-    const uint8_t black = 0x0;
-
-    EpdRect border = {
-        .x = x,
-        .y = y,
-        .width = width,
-        .height = 20,
-    };
-    epd_fill_rect(border, white, fb);
-    epd_draw_rect(border, black, fb);
+uint8_t epd_get_pixel_color(int x, int y, int fb_width, int fb_height, const uint8_t *framebuffer) {
+    if (x < 0 || x >= fb_width) {
+        return 0;
+    }
+    if (y < 0 || y >= fb_height) {
+        return 0;
+    }
+    int fb_width_bytes = fb_width / 2 + fb_width % 2;
+    uint8_t buf_val = framebuffer[y * fb_width_bytes + x / 2];
+    //printf("x:%d,y:%d,fb_width:%d,fb_height:%d,fb_width_bytes:%d,buf_val:%d\n",x,y,fb_width,fb_height,fb_width_bytes,buf_val);
+    if (!(x % 2)) {
+        buf_val = (buf_val & 0xF0) >> 4;
+        // printf("First pixel %d \n",buf_val);
+    } else {
+        buf_val = (buf_val & 0x0F);
+        // printf("Second pixel %d \n",buf_val);
+    }
     
 
-    EpdRect bar = {
-        .x = x + 5,
-        .y = y + 5,
-        .width = (width - 10) * percent / 100,
-        .height = 10,
-    };
+    // epd_draw_pixel needs a 0 -> 255 value
+    // printf("Finall pixel %d \n \n \n",buf_val<<4);
+    return buf_val<<4;
+    
+}
 
-    epd_fill_rect(bar, black, fb);
-
-    checkError(epd_hl_update_area(&hl, MODE_DU, epd_ambient_temperature(), border));
+void epd_draw_color_image(EpdRect image_area, const uint8_t *image_buffer, uint8_t *framebuffer){
+    uint16_t x_offset = 0;
+    uint16_t y_offset = 0;
+    uint8_t pixel_color;
+    for (uint16_t y = 0; y < image_area.height; y++) {
+        for (uint16_t x = 0; x < image_area.width; x++) {
+          x_offset = image_area.x + x;
+          y_offset = image_area.y + y;
+          if (x_offset >= epd_rotated_display_width()) continue;
+          if (y_offset >= epd_rotated_display_height()) continue;
+          pixel_color = epd_get_pixel_color(x, y, image_area.width, image_area.height, image_buffer);
+          
+          epd_draw_pixel(
+          x_offset,
+          y_offset,
+          pixel_color,
+          framebuffer);
+        
+        }
+    }
 }
 
 void idf_loop() {
     // select the font based on display width
-    const EpdFont* font;
-    if (epd_width() < 1000) {
-        font = &FiraSans_12;
-    } else {
-        font = &FiraSans_20;
-    }
-
     uint8_t* fb = epd_hl_get_framebuffer(&hl);
-
+    int temperature = 23;
+    epd_set_rotation(0);
+    // 清理屏
+    epd_poweron();
+    epd_fullclear(&hl, temperature);
+    epd_poweroff();
     
-    int temperature = epd_ambient_temperature();
+    // delay(5000);
 
-    
-    for(int i = 0; i < 600; i++) {
-        epd_draw_line(3*i, 0, 3*i, 800, 0, fb);
-        epd_draw_line(3*i+1, 0, 3*i+1, 800, 0xff, fb);
-        epd_draw_line(3*i+2, 0, 3*i+2, 800, 0xff, fb);
-    }
+
+    //循环显示图片
+    EpdRect beach_area = {
+        .x = 30,
+        .y = 300,
+        .width = img_beach_width,
+        .height = img_beach_height,
+    };
+    EpdRect zebra_area = {
+        .x = 30,
+        .y = 300,
+        .width = img_zebra_width,
+        .height = img_zebra_height,
+    };
+
+    EpdRect test800_area = {
+        .x = 0,
+        .y = 0,
+        .width = test800_width,
+        .height = test800_height,
+    };
+    //epd_draw_rotated_image(test800_area,test800_data, fb);
+    epd_draw_color_image(test800_area,test800_data, fb);
     epd_poweron();
     checkError(epd_hl_update_screen(&hl, MODE_GC16, temperature));
     epd_poweroff();
     
-    printf("draw line 0\n");
-    delay(1000);
-
-    epd_poweron();
-    epd_fill_rect(epd_full_screen(), 0xFF, fb);
-    epd_clear();
-    epd_poweroff();
-    
-    
-    for(int i = 0; i < 600; i++) {
-        epd_draw_line(3*i+1, 0, 3*i+1, 800, 0, fb);
-        epd_draw_line(3*i, 0, 3*i, 800, 0xff, fb);
-        epd_draw_line(3*i+2, 0, 3*i+2, 800, 0xff, fb);
-        
-    }
-    epd_poweron();
-    checkError(epd_hl_update_screen(&hl, MODE_GC16, temperature));
-    epd_poweroff();
-    printf("draw line 1\n");
-    delay(1000);
-
-    epd_poweron();
-    epd_fill_rect(epd_full_screen(), 0xFF, fb);
-    epd_clear();
-    epd_poweroff();
-
-    
-    for(int i = 0; i < 600; i++) {
-        epd_draw_line(3*i+2, 0, 3*i+2, 800, 0, fb);
-        epd_draw_line(3*i+1, 0, 3*i+1, 800, 0xff, fb);
-        epd_draw_line(3*i, 0, 3*i, 800, 0xff, fb);
-    }
-    epd_poweron();
-    checkError(epd_hl_update_screen(&hl, MODE_GC16, temperature));
-    epd_poweroff();
-    printf("draw line 2\n");
-    delay(1000);
-
-    epd_poweron();
-    epd_fill_rect(epd_full_screen(), 0xFF, fb);
-    epd_clear();
-    epd_poweroff();
+    delay(5000);
 }
 
 #ifndef ARDUINO_ARCH_ESP32
-void app_main() {
+void app_main() {   
     idf_setup();
 
     while (1) {
