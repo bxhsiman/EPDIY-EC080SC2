@@ -25,3 +25,6 @@ ED*.h
 ES*.h
 examples/private_*/
 components/*
+tools/*.png
+tools/*.jpg
+tools/*.h
