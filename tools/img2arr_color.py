@@ -1,7 +1,6 @@
 from PIL import Image
 import numpy as np
 import os
-import math
 
 def rgb_image_to_header_file(image_path, output_path):
     # 读取RGB图像
@@ -55,7 +54,7 @@ def rgb_image_to_header_file(image_path, output_path):
             # r2 = 15 - r2
             # g2 = 15 - g2
             # b2 = 15 - b2
-        
+            # bug: 合并方式不适配epdiy原版 是大端小端序问题 目前在main.c 中重写获取pixel函数解决
             # 将R1G1B1合并到1.5字节
             byte1 = (r1 << 4) | g1
             byte2 = (b1 << 4) | r2
@@ -81,7 +80,6 @@ def rgb_image_to_header_file(image_path, output_path):
 
         file.write('\n};')
 
-# 调用函数
 image_path = input('输入图像路径: ')  # 替换为图像文件路径
 output_path = input('输出文件路径: ')  # 输出文件的路径
 rgb_image_to_header_file(image_path, output_path)

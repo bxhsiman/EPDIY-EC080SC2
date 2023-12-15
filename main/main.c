@@ -20,11 +20,6 @@
 
 #include "sdkconfig.h"
 
-#include "firasans_12.h"
-#include "firasans_20.h"
-#include "img_beach.h"
-#include "img_board.h"
-#include "img_zebra.h"
 #include "test800.h"
 
 #define WAVEFORM EPD_BUILTIN_WAVEFORM
@@ -36,8 +31,19 @@
 #define DEMO_BOARD epd_board_v7
 #endif
 
+
+
 EpdiyHighlevelState hl;
 
+/* can be move in to displays.c */
+const EpdDisplay_t EC080SC2 = {
+    .width = 1800,
+    .height = 800,
+    .bus_width = 16,
+    .bus_speed = 11,
+    .default_waveform = &epdiy_ED047TC2,
+    .display_type = DISPLAY_TYPE_GENERIC,
+};
 void idf_setup() {
     epd_init(&DEMO_BOARD, &EC080SC2, EPD_LUT_64K);
     // Set VCOM for boards that allow to set this in software (in mV).
@@ -65,7 +71,14 @@ static inline void checkError(enum EpdDrawError err) {
         ESP_LOGE("demo", "draw error: %X", err);
     }
 }
-
+/**  
+ * @brief get pixel info form frambuffer
+ * @param x the x position
+ * @param y the y position
+ * @param fb_width the frambuffer width
+ * @param fb_height the frambuffer height
+ * @param framebuffer the frambuffer
+ * @bug *just for test !need to compare with epd_get_pixel diff in get pixel !* */
 uint8_t epd_get_pixel_color(int x, int y, int fb_width, int fb_height, const uint8_t *framebuffer) {
     if (x < 0 || x >= fb_width) {
         return 0;
@@ -90,7 +103,13 @@ uint8_t epd_get_pixel_color(int x, int y, int fb_width, int fb_height, const uin
     return buf_val<<4;
     
 }
-
+/** 
+ * @brief draw colorful image 
+ * @param image_area the area to draw
+ * @param image_buffer the image buffer
+ * @param framebuffer the frambuffer
+ * @bug just for test !to be move!
+ * */
 void epd_draw_color_image(EpdRect image_area, const uint8_t *image_buffer, uint8_t *framebuffer){
     uint16_t x_offset = 0;
     uint16_t y_offset = 0;
@@ -118,28 +137,13 @@ void idf_loop() {
     uint8_t* fb = epd_hl_get_framebuffer(&hl);
     int temperature = 23;
     epd_set_rotation(0);
+
     // 清理屏
     epd_poweron();
     epd_fullclear(&hl, temperature);
     epd_poweroff();
-    
     // delay(5000);
-
-
     //循环显示图片
-    EpdRect beach_area = {
-        .x = 30,
-        .y = 300,
-        .width = img_beach_width,
-        .height = img_beach_height,
-    };
-    EpdRect zebra_area = {
-        .x = 30,
-        .y = 300,
-        .width = img_zebra_width,
-        .height = img_zebra_height,
-    };
-
     EpdRect test800_area = {
         .x = 0,
         .y = 0,
