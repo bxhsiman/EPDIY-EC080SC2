@@ -28,3 +28,4 @@ components/*
 tools/*.png
 tools/*.jpg
 tools/*.h
+debug.log
