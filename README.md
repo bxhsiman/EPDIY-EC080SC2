@@ -29,6 +29,7 @@ EC080SC2是来自元太科技的的一款`800*600`分辨率的E-ink墨水屏幕�
             r1, g1, b1, _ = pixels[y, 2*x]
             r2, g2, b2, _ = pixels[y, 2*x+1]
    ```
+3. 本项目使用 [esp-idf v5.0](https://github.com/espressif/esp-idf) 框架 理论上arduino也能用，没试过~
 
 ## Licenses
 本项目依托于[epdiy](https://github.com/vroland/epdiy)项目
